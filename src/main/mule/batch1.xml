@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="133562d2-c6a4-44b7-b635-a7baf572f223" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="batch1Flow" doc:id="fd8ec244-1283-445d-b881-4b93bbfaa7c1" >
+		<http:listener doc:name="Listener" doc:id="9860fda8-f9bc-45ca-b10b-e6498eda7c85" config-ref="HTTP_Listener_config" path="/batch1"/>
+		<set-payload value='#[[1,2,"a",4,5,"b",6]]' doc:name="Set Payload" doc:id="ca1edf5c-2b63-4e06-8a8d-8a8f6ddd5567" />
+		<batch:job jobName="batch1Batch_Job" doc:id="916f0ab6-30f6-43d8-971a-95a8fa865734" maxFailedRecords="10">
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="b8c29651-f285-4bbb-9e62-36a8d9b64711">
+					<set-payload value="#[payload*5]" doc:name="Set Payload" doc:id="12e62ab2-af25-437e-b602-6ff3611dac15" />
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="87d1daa5-c5e2-4cf5-8202-4e3dcde621ce" size="2">
+						<logger level="INFO" doc:name="Logger" doc:id="8675177f-3048-4f15-9518-b4bd0a533329" message="#[payload]"/>
+					</batch:aggregator>
+				</batch:step>
+				<batch:step name="Batch_Step1" doc:id="79c378d1-367c-4916-a03c-d52fad73808f" acceptPolicy="ALL">
+					<set-payload value="#[payload+5]" doc:name="Set Payload" doc:id="2d65be03-a8d3-476a-93c3-dfca8021071f" />
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="a9f75a6a-0d50-4d04-bbad-d69fe6b9e78d" size="2">
+						<logger level="INFO" doc:name="Logger" doc:id="6a8a533c-46e6-4de6-a4d7-8deef94b6a98" />
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<ee:transform doc:name="Transform Message" doc:id="01bb3416-d46f-4d38-a6fa-9b6ea24f8de9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+</mule>
